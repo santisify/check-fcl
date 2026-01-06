@@ -15,11 +15,11 @@ const loadStatuses = async () => {
   error.value = null
   try {
     const data = await fetchStatuses()
-    statuses.value = data.statuses
-    lastUpdate.value = typeof data.lastUpdate === 'string' ? new Date(data.lastUpdate).toLocaleString() : (data.lastUpdate as Date).toLocaleString()
-    totalLinks.value = data.totalLinks
-  } catch (err) {
-    error.value = '加载友链状态失败，请稍后重试'
+    statuses.value = data.statuses || []
+    lastUpdate.value = data.lastUpdate ? (typeof data.lastUpdate === 'string' ? new Date(data.lastUpdate).toLocaleString() : (data.lastUpdate as Date).toLocaleString()) : 'N/A'
+    totalLinks.value = data.totalLinks || 0
+  } catch (err: any) {
+    error.value = err.message || '加载友链状态失败，请稍后重试'
     console.error('Error fetching statuses:', err)
   } finally {
     loading.value = false

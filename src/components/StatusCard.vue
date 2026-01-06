@@ -3,7 +3,7 @@
     <div class="status-header">
       <img 
         class="status-avatar" 
-        :src="(status as any).avatar || getFaviconUrl(status.link)" 
+        :src="status.avatar || getFaviconUrl(status.link)" 
         @error="onImageError"
         alt=""
       />

@@ -14,15 +14,15 @@
     "vue": "^3.5.12"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.0",
-    "concurrently": "^8.2.2",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.0",
-    "@vue/tsconfig": "^0.5.1",
-    "vue-tsc": "^2.0.0",
     "@types/node": "^20.8.2",
+    "@vercel/node": "^4.0.0",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vue/tsconfig": "^0.5.1",
+    "concurrently": "^8.2.2",
     "ts-node": "^10.9.1",
-    "vercel": "^37.4.0",
-    "@vercel/node": "^3.2.0"
+    "typescript": "^5.2.2",
+    "vercel": "^50.1.5",
+    "vite": "^7.3.0",
+    "vue-tsc": "^2.0.0"
   }
 }

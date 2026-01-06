@@ -5,7 +5,7 @@ import { LinkStatus } from '../types'
 // 在本地开发时，通过代理访问API
 const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
   ? ''  // 本地开发时使用代理
-  : ''  // Vercel部署时也在相同域名
+  : '';  // Vercel部署时也在相同域名
 
 export interface StatusResponse {
   lastUpdate: string
@@ -19,23 +19,28 @@ export interface StatusResponse {
  */
 export async function fetchStatuses(): Promise<StatusResponse> {
   try {
-    const response = await axios.get<StatusResponse>(API_BASE_URL + '/api/status', {
-      // 设置更长的超时时间，因为后端可能正在初始化
-      timeout: 15000
-    })
-    return response.data
-  } catch (error) {
-    console.error('Error fetching statuses:', error)
-    // 如果是网络错误，提供一个更友好的错误信息
-    if (axios.isAxiosError(error)) {
-      if (error.code === 'ERR_NETWORK') {
-        throw new Error('无法连接到后端服务，请确保后端服务器已启动')
-      } else if (error.response?.status === 500) {
-        throw new Error('后端服务内部错误，请检查服务器日志')
-      } else if (error.code === 'ECONNABORTED') {
-        throw new Error('请求超时，请稍后重试')
+    const response = await axios.get<StatusResponse>(`${API_BASE_URL}/api/status`, {
+      timeout: 15000  // 设置超时时间
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('Error fetching statuses:', error);
+    
+    // 检查错误类型并提供更具体的错误信息
+    if (error.code === 'ECONNABORTED') {
+      throw new Error('请求超时，请稍后重试');
+    } else if (error.response) {
+      // 服务器响应了错误状态
+      if (error.response.status === 500) {
+        throw new Error('服务器内部错误，请稍后重试');
+      } else {
+        throw new Error(`服务器错误: ${error.response.status}`);
       }
+    } else if (error.request) {
+      // 请求已发出但没有收到响应
+      throw new Error('网络错误，请检查网络连接');
+    } else {
+      throw new Error('获取数据失败，请刷新页面重试');
     }
-    throw new Error('Failed to fetch link statuses')
   }
 }
