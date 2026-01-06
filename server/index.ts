@@ -1,9 +1,10 @@
+// server/index.ts - 后端服务逻辑，保持原有的功能
 import axios from 'axios';
 import express, {Request, Response} from 'express';
 import cors from 'cors';
 import cron from 'node-cron';
 import * as fs from 'fs';
-import {FriendLinksData, LinkStatus} from './types';
+import {FriendLinksData, LinkStatus} from '../src/types.js';
 
 // Global variable to store the latest link statuses
 let currentLinkStatuses: LinkStatus[] = [];
@@ -132,48 +133,56 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 // Enable CORS for all routes
 app.use(cors());
 
-// Serve static files from public directory
-app.use(express.static('public'));
+// Serve static files from dist directory (Vite build output)
+app.use(express.static('dist'));
 
 // API endpoint to get current link statuses
-app.get('/api/status', (req: Request, res: Response) => {
-  // Combine link statuses with original link data to include avatar and other details
-  const result = {
-    lastUpdate,
-    totalLinks: currentLinkStatuses.length,
-    statuses: currentLinkStatuses.map(status => {
-      // Find the original link data in currentFriendLinksData
-      let originalLink = null;
-      
-      if (currentFriendLinksData) {
-        for (const category of currentFriendLinksData.friends) {
-          originalLink = category.link_list.find(link => link.link === status.link);
-          if (originalLink) break;
+app.get('/api/status', (_req: Request, res: Response) => {
+  try {
+    // Combine link statuses with original link data to include avatar and other details
+    const result = {
+      lastUpdate: lastUpdate.toISOString(), // Convert Date to ISO string for proper JSON serialization
+      totalLinks: currentLinkStatuses.length,
+      statuses: currentLinkStatuses.map(status => {
+        // Find the original link data in currentFriendLinksData
+        let originalLink = null;
+        
+        if (currentFriendLinksData) {
+          for (const category of currentFriendLinksData.friends) {
+            originalLink = category.link_list.find(link => link.link === status.link);
+            if (originalLink) break;
+          }
         }
-      }
-      
-      // Return status with original link data if found
-      if (originalLink) {
-        return {
-          ...originalLink, // Include original link data (name, link, avatar, intro)
-          status: status.status, // Add status info
-          message: status.message,
-          lastChecked: status.lastChecked,
-          responseTime: status.responseTime
-        };
-      } else {
-        // If original link not found, return status as is
-        return status;
-      }
-    })
-  };
-  
-  res.json(result);
+        
+        // Return status with original link data if found
+        if (originalLink) {
+          return {
+            ...originalLink, // Include original link data (name, link, avatar, intro)
+            status: status.status, // Add status info
+            message: status.message,
+            lastChecked: (status.lastChecked as any).toISOString ? (status.lastChecked as Date).toISOString() : status.lastChecked,
+            responseTime: status.responseTime
+          };
+        } else {
+          // If original link not found, return status as is
+          return {
+            ...status,
+            lastChecked: (status.lastChecked as any).toISOString ? (status.lastChecked as Date).toISOString() : status.lastChecked
+          };
+        }
+      })
+    };
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error in /api/status endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
-// Serve the main page
-app.get('/', (req: Request, res: Response) => {
-  res.sendFile(__dirname + '/public/index.html');
+// Serve the main page (Vite will handle this in dev mode, Express serves in prod)
+app.get('/', (_req: Request, res: Response) => {
+  res.sendFile(__dirname + '/dist/index.html');
 });
 
 // Function to start the web server
@@ -183,7 +192,7 @@ export function startServer() {
   let retries = 0;
 
   function attemptListen(port: number) {
-    const server = app.listen(port, () => {
+    app.listen(port, () => {
       console.log(`Friend link checker server running on port ${port}`);
     }).on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE') {
@@ -295,17 +304,18 @@ cron.schedule('0 0 * * *', async () => {
   timezone: "Asia/Shanghai" // Set to China Standard Time
 });
 
-// Initialize the check when the server starts
-runDailyCheck().then(() => {
-  startServer();
-  
-  // Also run the check every hour to keep data fresh
-  cron.schedule('0 * * * *', async () => {
-    await runDailyCheck();
-  }, {
-    scheduled: true,
-    timezone: "Asia/Shanghai"
-  });
+// 初始化服务器，先启动服务再开始首次检查
+startServer();
+
+// 立即进行首次检查
+runDailyCheck();
+
+// Also run the check every hour to keep data fresh
+cron.schedule('0 * * * *', async () => {
+  await runDailyCheck();
+}, {
+  scheduled: true,
+  timezone: "Asia/Shanghai"
 });
 
 // Export functions for use in other modules

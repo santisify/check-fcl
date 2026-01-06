@@ -1,18 +1,19 @@
 # 友链检查器 (Friend Link Checker)
 
-一个自动检查友链状态的工具，每天0点自动运行，提供网页界面查看友链状态。
+一个使用Vite+Vue重构的自动检查友链状态的工具，每天0点自动运行，提供网页界面查看友链状态。
 
 ## 功能
 
 - 从 `https://santisify.top/links.json` 获取友链数据
 - 每天0点自动检查所有友链状态
 - 每小时更新一次数据以保持新鲜度
-- 提供网页界面实时查看友链状态
+- 提供Vue驱动的现代化网页界面实时查看友链状态
 - 显示响应时间、状态码等详细信息
 
 ## 技术栈
 
-- TypeScript
+- Vite 5
+- Vue 3 (TypeScript)
 - Node.js
 - Express
 - node-cron
@@ -25,33 +26,45 @@
 npm install
 ```
 
-2. 编译 TypeScript：
+2. 开发模式运行（前端+后端）：
+```bash
+npm run dev-all
+```
+
+或者分别运行：
+```bash
+# 启动前端开发服务器
+npm run dev
+
+# 启动后端服务
+npm run server
+```
+
+3. 构建生产版本：
 ```bash
 npm run build
-```
-
-3. 启动服务器：
-```bash
-npm start
-```
-
-## 开发模式
-
-在开发模式下运行（自动重启）：
-```bash
-npm run dev
 ```
 
 ## 项目结构
 
 ```
 check-fcl/
-├── index.ts          # 主程序文件
-├── types.ts          # 类型定义
-├── public/           # 静态文件
-│   └── index.html    # 前端页面
+├── src/                 # Vue源代码
+│   ├── components/      # Vue组件
+│   ├── views/           # 页面视图
+│   ├── services/        # API服务
+│   ├── assets/          # 静态资源
+│   ├── main.ts          # Vue应用入口
+│   ├── App.vue          # 主组件
+│   └── types.ts         # 类型定义
+├── server/              # 服务端代码
+│   └── index.ts         # Express服务器和定时任务
+├── public/              # 静态资源
+│   └── index.html       # HTML模板
+├── vite.config.ts       # Vite配置
+├── tsconfig.json        # TypeScript配置
 ├── package.json
-└── tsconfig.json
+└── README.md
 ```
 
 ## API 接口

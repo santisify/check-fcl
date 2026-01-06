@@ -20,6 +20,6 @@ export interface LinkStatus {
   link: string;
   status: number | 'timeout' | 'error';
   message: string;
-  lastChecked: Date;
+  lastChecked: Date | string;  // 既可以是Date对象也可以是ISO字符串
   responseTime?: number;
 }
