@@ -2,11 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { FriendLinksData, LinkStatus } from '../src/types';
 import axios from 'axios';
 
-// Global variable to store the latest link statuses
-let currentLinkStatuses: LinkStatus[] = [];
-let lastUpdate: Date = new Date(0); // Initialize to epoch time
-let currentFriendLinksData: FriendLinksData | null = null; // Store the original friend links data
-
 /**
  * Fetches friend link data from the provided URL
  * @param url The URL to fetch friend link data from
@@ -120,39 +115,39 @@ async function checkAllLinkStatuses(friendLinksData: FriendLinksData): Promise<L
   return results;
 }
 
-// Function to run the check and update data
-async function runCheck() {
+export default async function handler(request: VercelRequest, response: VercelResponse) {
+  // Set CORS headers
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight requests
+  if (request.method === 'OPTIONS') {
+    return response.status(200).end();
+  }
+
+  if (request.method !== 'GET') {
+    return response.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
-    console.log(`Starting friend link check at ${new Date().toISOString()}`);
-    
     // Fetch the latest friend links data
     const friendLinksData = await fetchFriendLinks('https://santisify.top/links.json');
-    
-    // Store the original friend links data for API use
-    currentFriendLinksData = friendLinksData;
     
     // Check the status of all links (excluding special-links)
     const statuses = await checkAllLinkStatuses(friendLinksData);
     
-    // Update the global variables
-    currentLinkStatuses = statuses;
-    lastUpdate = new Date();
-    
-    console.log(`Check completed. Checked ${statuses.length} links.`);
-    
-    // Return the result for the API response
-    return {
-      lastUpdate,
-      totalLinks: currentLinkStatuses.length,
-      statuses: currentLinkStatuses.map(status => {
-        // Find the original link data in currentFriendLinksData
+    // Combine link statuses with original link data to include avatar and other details
+    const result = {
+      lastUpdate: new Date().toISOString(),
+      totalLinks: statuses.length,
+      statuses: statuses.map(status => {
+        // Find the original link data in friendLinksData
         let originalLink = null;
         
-        if (currentFriendLinksData) {
-          for (const category of currentFriendLinksData.friends) {
-            originalLink = category.link_list.find(link => link.link === status.link);
-            if (originalLink) break;
-          }
+        for (const category of friendLinksData.friends) {
+          originalLink = category.link_list.find(link => link.link === status.link);
+          if (originalLink) break;
         }
         
         // Return status with original link data if found
@@ -170,94 +165,13 @@ async function runCheck() {
         }
       })
     };
-  } catch (error) {
-    console.error('Error during link check:', error);
-    // If there's an error, return the last known data
-    return {
-      lastUpdate,
-      totalLinks: currentLinkStatuses.length,
-      statuses: currentLinkStatuses.map(status => {
-        let originalLink = null;
-        
-        if (currentFriendLinksData) {
-          for (const category of currentFriendLinksData.friends) {
-            originalLink = category.link_list.find(link => link.link === status.link);
-            if (originalLink) break;
-          }
-        }
-        
-        if (originalLink) {
-          return {
-            ...originalLink,
-            status: status.status,
-            message: status.message,
-            lastChecked: status.lastChecked,
-            responseTime: status.responseTime
-          };
-        } else {
-          return status;
-        }
-      })
-    };
-  }
-}
-
-export default async function handler(request: VercelRequest, response: VercelResponse) {
-  // Set CORS headers
-  response.setHeader('Access-Control-Allow-Origin', '*');
-  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  // Handle preflight requests
-  if (request.method === 'OPTIONS') {
-    return response.status(200).end();
-  }
-
-  try {
-    // Check if we should refresh data (if last update was more than 1 hour ago)
-    const oneHourInMillis = 60 * 60 * 1000;
-    const timeSinceLastUpdate = Date.now() - lastUpdate.getTime();
     
-    if (timeSinceLastUpdate > oneHourInMillis) {
-      // Run check to refresh data
-      const result = await runCheck();
-      return response.status(200).json(result);
-    } else {
-      // Return cached data
-      const result = {
-        lastUpdate: lastUpdate.toISOString(),
-        totalLinks: currentLinkStatuses.length,
-        statuses: currentLinkStatuses.map(status => {
-          let originalLink = null;
-          
-          if (currentFriendLinksData) {
-            for (const category of currentFriendLinksData.friends) {
-              originalLink = category.link_list.find(link => link.link === status.link);
-              if (originalLink) break;
-            }
-          }
-          
-          if (originalLink) {
-            return {
-              ...originalLink,
-              status: status.status,
-              message: status.message,
-              lastChecked: (status.lastChecked as any).toISOString ? (status.lastChecked as Date).toISOString() : status.lastChecked,
-              responseTime: status.responseTime
-            };
-          } else {
-            return {
-              ...status,
-              lastChecked: (status.lastChecked as any).toISOString ? (status.lastChecked as Date).toISOString() : status.lastChecked
-            };
-          }
-        })
-      };
-      
-      return response.status(200).json(result);
-    }
+    return response.status(200).json(result);
   } catch (error) {
     console.error('API Error:', error);
-    return response.status(500).json({ error: 'Internal server error' });
+    return response.status(500).json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }
