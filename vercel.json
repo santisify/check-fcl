@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "functions": {
+    "api/functions/status.ts": {
+      "runtime": "nodejs22.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/status",
+      "dest": "/api/functions/status.ts"
+    }
+  ]
+}

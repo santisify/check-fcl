@@ -1,7 +1,11 @@
 import axios from 'axios'
 import { LinkStatus } from '../types'
 
-const API_BASE_URL = '/api' // 使用相对路径
+// 在Vercel部署时，API端点在相同域名下
+// 在本地开发时，通过代理访问API
+const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+  ? ''  // 本地开发时使用代理
+  : ''  // Vercel部署时也在相同域名
 
 export interface StatusResponse {
   lastUpdate: string
@@ -15,7 +19,7 @@ export interface StatusResponse {
  */
 export async function fetchStatuses(): Promise<StatusResponse> {
   try {
-    const response = await axios.get<StatusResponse>(API_BASE_URL + '/status', {
+    const response = await axios.get<StatusResponse>(API_BASE_URL + '/api/status', {
       // 设置更长的超时时间，因为后端可能正在初始化
       timeout: 15000
     })
