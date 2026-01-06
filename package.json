@@ -7,9 +7,6 @@
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
-    "server": "node --loader ts-node/esm server/index.ts",
-    "dev-all": "concurrently \"npm run dev\" \"npm run server\"",
-    "start": "node dist/server/index.js",
     "vercel-build": "vue-tsc && vite build"
   },
   "dependencies": {
@@ -25,6 +22,7 @@
     "vue-tsc": "^2.0.0",
     "@types/node": "^20.8.2",
     "ts-node": "^10.9.1",
-    "vercel": "^37.4.0"
+    "vercel": "^37.4.0",
+    "@vercel/node": "^3.2.0"
   }
 }

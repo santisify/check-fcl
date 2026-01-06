@@ -1,14 +1,19 @@
 {
   "version": 2,
-  "functions": {
-    "api/functions/status.ts": {
-      "runtime": "nodejs18.x"
+  "builds": [
+    {
+      "src": "api/*.ts",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "routes": [
     {
-      "src": "/api/status",
-      "dest": "/api/functions/status.ts"
+      "src": "/api/(.*)",
+      "dest": "/api/status.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }

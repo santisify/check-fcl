@@ -1,4 +1,5 @@
-import { FriendLinksData, LinkStatus } from '../../src/types';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { FriendLinksData, LinkStatus } from '../src/types';
 import axios from 'axios';
 
 // Global variable to store the latest link statuses
@@ -201,7 +202,7 @@ async function runCheck() {
   }
 }
 
-export default async function handler(request, response) {
+export default async function handler(request: VercelRequest, response: VercelResponse) {
   // Set CORS headers
   response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
