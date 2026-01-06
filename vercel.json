@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/functions/status.ts": {
-      "runtime": "nodejs22.x"
+      "runtime": "nodejs18.x"
     }
   },
   "routes": [
